@@ -135,11 +135,13 @@ function updatePlayerCount() {
 interface Craft {
   id: string;
   mesh: THREE.Mesh;
-  orbitRadius: number;
+  orbitRadius: number; // use this as the semi-major axis (a)
   orbitSpeed: number;
-  angle: number;
+  angle: number;       // will hold the current true anomaly (θ)
   color: number;
   orbitLine?: THREE.Line;
+  e: number;           // eccentricity
+  omega: number;       // argument of periapsis
 }
 
 const craftRegistry = new Map<string, Craft>();
@@ -211,15 +213,20 @@ function createLabelSprite(text: string): THREE.Sprite {
   return sprite;
 }
 
-function createOrbitLine(orbitRadius: number): THREE.Line {
+function createOrbitLine(a: number, e: number, omega: number): THREE.Line {
   const segments = 64;
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array((segments + 1) * 3);
   for (let i = 0; i <= segments; i++) {
-    const angle = (i / segments) * Math.PI * 2;
-    positions[i * 3] = orbitRadius * Math.cos(angle);
-    positions[i * 3 + 1] = 0; // orbit in the xz-plane
-    positions[i * 3 + 2] = orbitRadius * Math.sin(angle);
+    const theta = (i / segments) * Math.PI * 2;  // parameter in the orbital plane
+    // Elliptical orbit equation: r = a(1-e²)/(1+e cos(theta))
+    const r = a * (1 - e * e) / (1 + e * Math.cos(theta));
+    // Rotate the orbit by ω: add omega to the polar angle.
+    const x = r * Math.cos(theta + omega);
+    const z = r * Math.sin(theta + omega);
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = 0;
+    positions[i * 3 + 2] = z;
   }
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const material = new THREE.LineBasicMaterial({
@@ -231,29 +238,34 @@ function createOrbitLine(orbitRadius: number): THREE.Line {
 }
 
 // Create a new craft with the given ID and parameters
-function createCraft(id: string, name: string, color: number, orbitRadius: number, orbitSpeed: number): Craft {
-  // Make the craft smaller
+function createCraft(id: string, name: string, color: number, a: number, orbitSpeed: number, e: number, omega: number): Craft {
+  // Create a small craft mesh.
   const craftGeometry = new THREE.SphereGeometry(0.5, 32, 32);
   const craftMaterial = new THREE.MeshBasicMaterial({ color });
   const craftMesh = new THREE.Mesh(craftGeometry, craftMaterial);
   scene.add(craftMesh);
 
-  // Create and add a label above the craft; adjust the offset accordingly
+  // Create and add a label (will only appear in the mini‑map).
   const label = createLabelSprite(name);
   label.position.set(0, 0.8, 0);
   craftMesh.add(label);
-  
-  const orbitLine = createOrbitLine(orbitRadius);
-  // The orbit line is centered at (0,0,0)
+
+  // Create the orbit line using the new parameters.
+  const orbitLine = createOrbitLine(a, e, omega);
   scene.add(orbitLine);
-  
+
+  // Generate an initial true anomaly.
+  const initialTrueAnomaly = Math.random() * Math.PI * 2;
+
   return {
     id,
     mesh: craftMesh,
-    orbitRadius,
+    orbitRadius: a,
     orbitSpeed,
-    angle: Math.random() * Math.PI * 2, // Random starting angle
+    angle: initialTrueAnomaly,
     color,
+    e,
+    omega,
     orbitLine
   };
 }
@@ -261,13 +273,15 @@ function createCraft(id: string, name: string, color: number, orbitRadius: numbe
 // Generate a unique client ID
 const clientId = 'client_' + Math.random().toString(36).substr(2, 9);
 
-// Create our own craft
+// Create our own craft with Keplerian parameters
 const myCraft = {
   id: clientId,
   name: generateRandomName(),
   color: getRandomColor(),
-  orbitRadius: getRandomOrbitRadius(),
-  orbitSpeed: getRandomOrbitSpeed()
+  orbitRadius: getRandomOrbitRadius(),  // This is our semi-major axis, "a"
+  orbitSpeed: getRandomOrbitSpeed(),      // Δ true anomaly per frame (simplified)
+  e: Math.random() * 0.1,                 // Eccentricity: small (0 to 0.1)
+  omega: Math.random() * Math.PI * 2       // Argument of periapsis (ω)
 };
 
 // Create a dedicated container for Tweakpane with a high z-index.
@@ -284,17 +298,21 @@ const pane = new Pane({
 });
 const craftParams = {
   name: myCraft.name,
-  orbitRadius: myCraft.orbitRadius,
+  a: myCraft.orbitRadius,
   orbitSpeed: myCraft.orbitSpeed,
   angle: 0,
+  e: myCraft.e,
+  omega: myCraft.omega
 };
 const folder = pane.addFolder({
   title: 'Craft Parameters',
 });
 folder.addMonitor(craftParams, 'name');
-folder.addMonitor(craftParams, 'orbitRadius', { min: 30, max: 50 });
+folder.addMonitor(craftParams, 'a', { min: 30, max: 50 });
 folder.addMonitor(craftParams, 'orbitSpeed', { min: 0.001, max: 0.01 });
 folder.addMonitor(craftParams, 'angle', { min: 0, max: Math.PI * 2 });
+folder.addMonitor(craftParams, 'e', { min: 0, max: 0.1 });
+folder.addMonitor(craftParams, 'omega', { min: 0, max: Math.PI * 2 });
 
 // Animation function
 function animate() {
@@ -312,24 +330,26 @@ function animate() {
   
   // Update all crafts in the registry
   craftRegistry.forEach(craft => {
+    // Update the true anomaly.
     craft.angle += craft.orbitSpeed;
-    // Update craft position along its orbit.
-    craft.mesh.position.x = craft.orbitRadius * Math.cos(craft.angle);
-    craft.mesh.position.z = craft.orbitRadius * Math.sin(craft.angle);
-    // Ensure the orbit occurs in the same horizontal plane as the planet.
-    craft.mesh.position.y = 0;
-    
-    // Compute the tangent vector of the orbit for proper orientation.
-    // Tangent is perpendicular to the radial vector.
-    const tangent = new THREE.Vector3(
-      -Math.sin(craft.angle),
-      0,
-      Math.cos(craft.angle)
-    );
-    // Set the craft to look toward the direction of movement.
-    // Add the tangent vector to the current position and lookAt that point.
-    const lookAtPoint = new THREE.Vector3().addVectors(craft.mesh.position, tangent);
-    craft.mesh.lookAt(lookAtPoint);
+    // Compute the instantaneous radius using the ellipse equation:
+    const r = craft.orbitRadius * (1 - craft.e * craft.e) / (1 + craft.e * Math.cos(craft.angle));
+    // Compute the position in the orbital plane (equatorial, so y = 0)
+    const newX = r * Math.cos(craft.angle + craft.omega);
+    const newZ = r * Math.sin(craft.angle + craft.omega);
+    craft.mesh.position.set(newX, 0, newZ);
+
+    // Approximate the tangent vector via finite differences.
+    const deltaAngle = 0.001;
+    const r2 = craft.orbitRadius * (1 - craft.e * craft.e) / (1 + craft.e * Math.cos(craft.angle + deltaAngle));
+    const newX2 = r2 * Math.cos(craft.angle + deltaAngle + craft.omega);
+    const newZ2 = r2 * Math.sin(craft.angle + deltaAngle + craft.omega);
+    const pos1 = new THREE.Vector3(newX, 0, newZ);
+    const pos2 = new THREE.Vector3(newX2, 0, newZ2);
+    const tangent = pos2.sub(pos1).normalize();
+
+    // Make the craft face the direction of motion.
+    craft.mesh.lookAt(new THREE.Vector3().addVectors(craft.mesh.position, tangent));
   });
   
   const ourCraft = craftRegistry.get(clientId);
@@ -391,7 +411,9 @@ ws.onopen = () => {
     myCraft.name,
     myCraft.color,
     myCraft.orbitRadius,
-    myCraft.orbitSpeed
+    myCraft.orbitSpeed,
+    myCraft.e,
+    myCraft.omega
   );
   craftRegistry.set(myCraft.id, ourCraft);
   updatePlayerCount();
@@ -432,7 +454,9 @@ ws.onmessage = (event) => {
           craftData.name,
           craftData.color,
           craftData.orbitRadius,
-          craftData.orbitSpeed
+          craftData.orbitSpeed,
+          craftData.e || 0,  // Handle older clients that might not send e
+          craftData.omega || 0  // Handle older clients that might not send omega
         );
         
         craftRegistry.set(craftData.id, newCraft);
