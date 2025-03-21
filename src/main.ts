@@ -295,7 +295,17 @@ function createOrbitLine(a: number, e: number, omega: number): THREE.Line {
 }
 
 // Create a new craft with the given ID and parameters
-function createCraft(id: string, name: string, color: number, a: number, orbitSpeed: number, e: number, omega: number): Craft {
+function createCraft(
+  id: string,
+  name: string,
+  color: number,
+  a: number,
+  orbitSpeed: number,
+  e: number,
+  omega: number,
+  thrusterFuel?: number,
+  mainFuel?: number
+): Craft {
   // Create a small craft mesh.
   const craftGeometry = new THREE.SphereGeometry(0.5, 32, 32);
   const craftMaterial = new THREE.MeshBasicMaterial({ color });
@@ -323,7 +333,9 @@ function createCraft(id: string, name: string, color: number, a: number, orbitSp
     color,
     e,
     omega,
-    orbitLine
+    orbitLine,
+    thrusterFuel: thrusterFuel !== undefined ? thrusterFuel : 100,
+    mainFuel: mainFuel !== undefined ? mainFuel : 100
   };
 }
 
@@ -530,7 +542,7 @@ ws.onopen = () => {
     craftData: myCraft
   };
   
-  // Add our own craft to the registry
+  // Add our own craft to the registry, now passing our fuel levels:
   const ourCraft = createCraft(
     myCraft.id,
     myCraft.name,
@@ -538,10 +550,15 @@ ws.onopen = () => {
     myCraft.orbitRadius,
     myCraft.orbitSpeed,
     myCraft.e,
-    myCraft.omega
+    myCraft.omega,
+    myCraft.thrusterFuel,
+    myCraft.mainFuel
   );
   craftRegistry.set(myCraft.id, ourCraft);
   updatePlayerCount();
+  
+  // Update our local craft object so that Tweakpane monitors update with the fuel values.
+  Object.assign(myCraft, ourCraft);
   
   // Hide our craft in the primary view:
   ourCraft.mesh.layers.set(2);
