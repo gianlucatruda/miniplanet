@@ -1,10 +1,11 @@
 {
   "name": "micro-planet-app",
   "version": "1.0.0",
+  "type": "module",
   "description": "A WebSocket server and Three.js client application",
   "main": "server/index.js",
   "scripts": {
-    "start:server": "ts-node server/index.ts",
+    "start:server": "node --loader ts-node/esm server/index.ts",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
