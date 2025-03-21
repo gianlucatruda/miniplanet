@@ -2,6 +2,11 @@
 
 This project is a simple WebSocket server and Three.js client demonstration. The application showcases a miniature "planet" with an orbiting object rendered in the browser, leveraging Three.js, and communicates with a server via WebSockets.
 
+![SCR-20250321-qatp](https://github.com/user-attachments/assets/cf4d462a-f325-4393-b70e-f576c3bc5938)
+
+![SCR-20250321-qpfo](https://github.com/user-attachments/assets/7d2109a1-f3e9-4c1a-856b-47893eda7695)
+
+
 ## Overview
 
 - **WebSocket Server:**  
