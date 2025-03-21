@@ -313,11 +313,8 @@ function animate() {
   const ourCraft = craftRegistry.get(clientId);
   if (ourCraft) {
     craftParams.angle = ourCraft.angle;
-  }
-  
-  // Primary view: update camera based on our craft's movement without affecting current rotation.
-  const ourCraft = craftRegistry.get(clientId);
-  if (ourCraft) {
+    
+    // Primary view: update camera based on our craft's movement without affecting current rotation.
     // On the first frame, initialize prevCraftPosition
     if (prevCraftPosition.lengthSq() === 0) {
       prevCraftPosition.copy(ourCraft.mesh.position);
