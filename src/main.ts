@@ -13,6 +13,7 @@ function generateRandomName(): string {
 // --- Three.js Setup ---
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.layers.disable(1);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -20,6 +21,19 @@ document.body.appendChild(renderer.domElement);
 // --- Add OrbitControls ---
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+
+// --- Mini-map camera: overhead view ---
+const miniMapCamera = new THREE.PerspectiveCamera(
+  60,
+  window.innerWidth / (window.innerHeight / 4),
+  0.1,
+  2000
+);
+miniMapCamera.position.set(0, 100, 0);
+miniMapCamera.lookAt(0, 0, 0);
+// Ensure the mini-map sees both regular objects (layer 0) and the marker (layer 1)
+miniMapCamera.layers.enable(0);
+miniMapCamera.layers.enable(1);
 
 // --- Create a giant planet with a more realistic, lit material ---
 const planetGeometry = new THREE.SphereGeometry(20, 64, 64);  // increased radius and segments
@@ -87,6 +101,28 @@ function getRandomOrbitRadius(): number {
 // Generate a random orbit speed
 function getRandomOrbitSpeed(): number {
   return 0.005 + Math.random() * 0.015;
+}
+
+function createRedXMarker(): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext('2d')!;
+  context.strokeStyle = 'red';
+  context.lineWidth = 10;
+  context.beginPath();
+  context.moveTo(10, 10);
+  context.lineTo(118, 118);
+  context.moveTo(118, 10);
+  context.lineTo(10, 118);
+  context.stroke();
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(3, 3, 1);
+  // Put this marker on layer 1 so it only appears in mini-map view.
+  sprite.layers.set(1);
+  return sprite;
 }
 
 function createLabelSprite(text: string): THREE.Sprite {
@@ -169,8 +205,31 @@ function animate() {
     craft.mesh.position.z = craft.orbitRadius * Math.sin(craft.angle);
   });
   
+  // Update camera target to follow our craft
+  const ourCraft = craftRegistry.get(clientId);
+  if (ourCraft) {
+    controls.target.copy(ourCraft.mesh.position);
+  }
+  
   controls.update(); // Update controls for smooth damping effect
+  
+  // --- Render main view ---
+  // Reset viewport and render full-screen main view
+  renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+  renderer.setScissor(0, 0, window.innerWidth, window.innerHeight);
+  renderer.setScissorTest(true);
   renderer.render(scene, camera);
+  
+  // --- Render mini-map view ---
+  // Define mini-map viewport dimensions: bottom quarter of the screen.
+  const insetWidth = window.innerWidth;
+  const insetHeight = window.innerHeight / 4;
+  renderer.clearDepth(); // clear depth buffer so the mini-map is rendered on top
+  renderer.setViewport(0, 0, insetWidth, insetHeight);
+  renderer.setScissor(0, 0, insetWidth, insetHeight);
+  renderer.setScissorTest(true);
+  renderer.render(scene, miniMapCamera);
+  renderer.setScissorTest(false);
 }
 animate();
 
@@ -196,6 +255,11 @@ ws.onopen = () => {
   );
   craftRegistry.set(myCraft.id, ourCraft);
   updatePlayerCount();
+  
+  // Add the red X marker so the active player's craft is clearly identified in the mini-map.
+  const redXMarker = createRedXMarker();
+  redXMarker.position.set(0, 1, 0);
+  ourCraft.mesh.add(redXMarker);
   
   // Send our craft data to the server
   ws.send(JSON.stringify(registrationMessage));
@@ -257,5 +321,7 @@ ws.onerror = (error) => {
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  miniMapCamera.aspect = window.innerWidth / (window.innerHeight / 4);
+  miniMapCamera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
