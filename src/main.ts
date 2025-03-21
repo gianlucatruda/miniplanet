@@ -82,6 +82,7 @@ renderer.domElement.addEventListener('pointerdown', (event) => {
 const planetGeometry = new THREE.SphereGeometry(20, 64, 64);  // increased radius and segments
 const planetMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22, shininess: 10 });  // a natural green with some specular shine
 const microPlanet = new THREE.Mesh(planetGeometry, planetMaterial);
+microPlanet.position.y = 30;
 scene.add(microPlanet);
 
 // Position the camera and micro-planet
@@ -290,6 +291,8 @@ function animate() {
     // Update craft position along its orbit.
     craft.mesh.position.x = craft.orbitRadius * Math.cos(craft.angle);
     craft.mesh.position.z = craft.orbitRadius * Math.sin(craft.angle);
+    // Ensure the orbit occurs in the same horizontal plane as the planet.
+    craft.mesh.position.y = 30;
     
     // Compute the tangent vector of the orbit for proper orientation.
     // Tangent is perpendicular to the radial vector.
