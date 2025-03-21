@@ -26,9 +26,65 @@ document.body.appendChild(renderer.domElement);
 const controls = new PointerLockControls(camera, document.body);
 scene.add(controls.getObject());
 
+// Variables for drag rotation
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+let rotationSensitivity = 0.005;
+
 // Initialize pointer lock on click
-renderer.domElement.addEventListener('click', () => {
-  controls.lock();
+renderer.domElement.addEventListener('click', (event) => {
+  // Only lock if in the primary view area (not minimap)
+  if (event.clientY <= window.innerHeight * 0.75) {
+    controls.lock();
+  }
+});
+
+// Handle mouse down for drag rotation
+renderer.domElement.addEventListener('mousedown', (event) => {
+  // Only enable dragging in the primary view area
+  if (event.clientY <= window.innerHeight * 0.75 && !controls.isLocked) {
+    isDragging = true;
+    previousMousePosition = {
+      x: event.clientX,
+      y: event.clientY
+    };
+  }
+});
+
+// Handle mouse move for drag rotation
+renderer.domElement.addEventListener('mousemove', (event) => {
+  if (isDragging && !controls.isLocked) {
+    const deltaMove = {
+      x: event.clientX - previousMousePosition.x,
+      y: event.clientY - previousMousePosition.y
+    };
+
+    // Rotate the camera based on mouse movement
+    const rotationQuaternion = new THREE.Quaternion()
+      .setFromEuler(new THREE.Euler(
+        -deltaMove.y * rotationSensitivity,
+        -deltaMove.x * rotationSensitivity,
+        0,
+        'XYZ'
+      ));
+    
+    controls.getObject().quaternion.premultiply(rotationQuaternion);
+
+    previousMousePosition = {
+      x: event.clientX,
+      y: event.clientY
+    };
+  }
+});
+
+// Handle mouse up to stop dragging
+renderer.domElement.addEventListener('mouseup', () => {
+  isDragging = false;
+});
+
+// Handle mouse leave to stop dragging
+renderer.domElement.addEventListener('mouseleave', () => {
+  isDragging = false;
 });
 
 // --- Mini-map camera: overhead view ---
@@ -76,7 +132,8 @@ renderer.domElement.addEventListener('pointerdown', (event) => {
     controls.unlock(); // Unlock pointer controls when clicking on minimap
   } else {
     miniMapControls.enabled = false;
-    controls.lock(); // Lock pointer controls when clicking on main view
+    // Don't automatically lock controls here, let the mousedown handler handle it
+    // This allows for drag rotation when not locked
   }
 });
 
@@ -297,6 +354,17 @@ document.body.appendChild(tweakpaneContainer);
 const pane = new Pane({
   title: 'Player Info',
   container: tweakpaneContainer,
+});
+
+// Add control settings to the pane
+const controlsFolder = pane.addFolder({
+  title: 'Controls',
+});
+controlsFolder.addInput({ rotationSensitivity }, 'rotationSensitivity', {
+  min: 0.001,
+  max: 0.01,
+  step: 0.001,
+  label: 'Drag Sensitivity'
 });
 const craftParams = {
   name: myCraft.name,
