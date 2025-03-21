@@ -6,6 +6,7 @@ This project is a simple WebSocket server and Three.js client demonstration. The
 
 - **WebSocket Server:**  
   A simple server (located at `server/index.ts`) that listens on port 8080 and echoes messages back to the client.
+- Improved server logs now leverage multiple log levels and parse new Keplerian orbital parameters.
 
 - **Three.js Client:**  
   The client (located in `src/main.ts`) renders a 3D scene with a large green sphere (the micro-planet) and a smaller red sphere orbiting it.  
@@ -50,18 +51,19 @@ This project is a simple WebSocket server and Three.js client demonstration. The
   - [x] Setup WebSocket server using `ws`
   - [x] Integrate basic Three.js scene with micro-planet and orbiting object
   - [x] Configure TypeScript and Vite for client development
-  - [x] Add OrbitControls to the Three.js scene
+  - [x] Add OrbitControls and PointerLockControls adjustments for refined camera behavior
 
-- [ ] **WebSocket Enhancements:**  
+- [x] **WebSocket Enhancements:**  
   - [x] Broadcast messages from clients to all clients
-  - [ ] **Multiple Crafts:**  
-    - [ ] Each client generates a unique craft with randomly-generated color and orbital parameters  
-    - [ ] Animate all client crafts on each client without collisions (different orbit trajectories)
+  - [x] **Multiple Crafts:**  
+    - [x] Each client generates a unique craft with randomly-generated color and Keplerian orbital parameters (including eccentricity and omega)
+    - [x] Animate all client crafts on each client
+  - [x] Improve server logging with different logging levels and enhanced parsing of orbital parameters
   - [ ] Add error handling and reconnection logic
 
-- [ ] **Scene Enhancements:**  
-  - [ ] Add more planetary objects and dynamic lighting.
-  - [ ] Implement user-controlled camera animations
+- [x] **Scene Enhancements:**  
+  - [x] Implement dynamic lighting with a moving sun and ambient light
+  - [ ] Implement user-controlled camera animations (refinement pending)
 
 - [ ] **Deployment:**  
   - [ ] Setup continuous integration and deployment workflow.
