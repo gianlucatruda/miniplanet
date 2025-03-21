@@ -31,13 +31,8 @@ let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 let rotationSensitivity = 0.005;
 
-// Initialize pointer lock on click
-renderer.domElement.addEventListener('click', (event) => {
-  // Only lock if in the primary view area (not minimap)
-  if (event.clientY <= window.innerHeight * 0.75) {
-    controls.lock();
-  }
-});
+// Pointer lock is now only controlled by the minimap interactions
+// and not automatically engaged on primary view clicks
 
 // Handle mouse down for drag rotation
 renderer.domElement.addEventListener('mousedown', (event) => {
