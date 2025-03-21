@@ -356,8 +356,8 @@ function animate() {
   if (ourCraft) {
     craftParams.angle = ourCraft.angle;
     
-    // Primary view: directly set camera position to our craft's position
-    camera.position.copy(ourCraft.mesh.position);
+    // Primary view: update controls object position to our craft's position
+    controls.getObject().position.copy(ourCraft.mesh.position);
     controls.target.copy(ourCraft.mesh.position);
   }
   
