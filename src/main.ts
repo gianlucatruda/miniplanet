@@ -22,6 +22,8 @@ document.body.appendChild(renderer.domElement);
 // --- Add OrbitControls ---
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.enablePan = false;
+controls.enableZoom = false;
 
 // --- Mini-map camera: overhead view ---
 const miniMapCamera = new THREE.PerspectiveCamera(
@@ -37,6 +39,11 @@ miniMapCamera.layers.enable(0);
 miniMapCamera.layers.enable(1);
 // Ensure the mini-map sees layer 2 (our active player's craft)
 miniMapCamera.layers.enable(2);
+
+// --- Add mini-map controls centered on the main planet ---
+const miniMapControls = new OrbitControls(miniMapCamera, renderer.domElement);
+miniMapControls.target.set(0, 0, 0);
+miniMapControls.update();
 
 // --- Create a giant planet with a more realistic, lit material ---
 const planetGeometry = new THREE.SphereGeometry(20, 64, 64);  // increased radius and segments
@@ -73,6 +80,21 @@ playerCountDiv.style.fontSize = "24px";
 playerCountDiv.style.borderRadius = "8px";
 playerCountDiv.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.4)";
 document.body.appendChild(playerCountDiv);
+
+// --- Display active player name at top right ---
+const playerNameDiv = document.createElement('div');
+playerNameDiv.id = "playerName";
+playerNameDiv.style.position = "fixed";
+playerNameDiv.style.top = "10px";
+playerNameDiv.style.right = "10px";
+playerNameDiv.style.padding = "5px 12px";
+playerNameDiv.style.background = "rgba(0, 0, 0, 0.6)";
+playerNameDiv.style.color = "#FFD700";
+playerNameDiv.style.fontFamily = "Arial, sans-serif";
+playerNameDiv.style.fontSize = "24px";
+playerNameDiv.style.borderRadius = "8px";
+playerNameDiv.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.4)";
+document.body.appendChild(playerNameDiv);
 
 const miniMapOverlay = document.createElement('div');
 miniMapOverlay.id = 'miniMapOverlay';
@@ -134,7 +156,7 @@ function createRedXMarker(): THREE.Sprite {
   const texture = new THREE.CanvasTexture(canvas);
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(3, 3, 1);
+  sprite.scale.set(6, 6, 1);  // bigger red X for mini-map
   // Put this marker on layer 1 so it only appears in mini-map view.
   sprite.layers.set(1);
   return sprite;
@@ -159,8 +181,9 @@ function createLabelSprite(text: string): THREE.Sprite {
   
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(material);
+  sprite.layers.set(1); // label visible only in mini-map (primary camera disables layer 1)
   // Scale sprite based on canvas dimensions
-  sprite.scale.set(canvas.width / 10, canvas.height / 10, 1);
+  sprite.scale.set(canvas.width / 5, canvas.height / 5, 1);
   return sprite;
 }
 
@@ -220,9 +243,13 @@ function animate() {
     craft.mesh.position.z = craft.orbitRadius * Math.sin(craft.angle);
   });
   
-  // Update camera target to follow our craft
+  // Primary view: lock camera relative to active player's craft.
   const ourCraft = craftRegistry.get(clientId);
   if (ourCraft) {
+    // Fixed offset in world space relative to the player's craft, e.g. (0, 2, -5)
+    const cameraOffset = new THREE.Vector3(0, 2, -5);
+    camera.position.copy(ourCraft.mesh.position).add(cameraOffset);
+    camera.lookAt(ourCraft.mesh.position);
     controls.target.copy(ourCraft.mesh.position);
   }
   
@@ -244,6 +271,7 @@ function animate() {
   renderer.setScissor(0, 0, insetWidth, insetHeight);
   renderer.setScissorTest(true);
   renderer.render(scene, miniMapCamera);
+  miniMapControls.update();
   renderer.setScissorTest(false);
 }
 animate();
@@ -270,6 +298,7 @@ ws.onopen = () => {
   );
   craftRegistry.set(myCraft.id, ourCraft);
   updatePlayerCount();
+  playerNameDiv.textContent = `You: ${myCraft.name}`;
   
   // Hide our craft in the primary view:
   ourCraft.mesh.layers.set(2);
