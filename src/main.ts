@@ -12,9 +12,10 @@ function generateRandomName(): string {
 
 // --- Three.js Setup ---
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.layers.disable(1); // already exists for red X
 camera.layers.disable(2); // Hides our active player's craft from main view
+camera.updateProjectionMatrix();
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -27,11 +28,12 @@ controls.enableZoom = false;
 
 // --- Mini-map camera: overhead view ---
 const miniMapCamera = new THREE.PerspectiveCamera(
-  60,
+  90,
   window.innerWidth / (window.innerHeight / 4),
   0.1,
   2000
 );
+miniMapCamera.updateProjectionMatrix();
 miniMapCamera.position.set(0, 100, 0);
 miniMapCamera.lookAt(0, 0, 0);
 // Ensure the mini-map sees both regular objects (layer 0) and the marker (layer 1)
@@ -153,6 +155,9 @@ interface Craft {
 
 const craftRegistry = new Map<string, Craft>();
 
+// Global variable to track previous position of our craft
+let prevCraftPosition = new THREE.Vector3();
+
 // Generate a random color
 function getRandomColor(): number {
   return Math.random() * 0xffffff;
@@ -269,18 +274,37 @@ function animate() {
   // Update all crafts in the registry
   craftRegistry.forEach(craft => {
     craft.angle += craft.orbitSpeed;
+    // Update craft position along its orbit.
     craft.mesh.position.x = craft.orbitRadius * Math.cos(craft.angle);
     craft.mesh.position.z = craft.orbitRadius * Math.sin(craft.angle);
+    
+    // Compute the tangent vector of the orbit for proper orientation.
+    // Tangent is perpendicular to the radial vector.
+    const tangent = new THREE.Vector3(
+      -Math.sin(craft.angle),
+      0,
+      Math.cos(craft.angle)
+    );
+    // Set the craft to look toward the direction of movement.
+    // Add the tangent vector to the current position and lookAt that point.
+    const lookAtPoint = new THREE.Vector3().addVectors(craft.mesh.position, tangent);
+    craft.mesh.lookAt(lookAtPoint);
   });
   
-  // Primary view: lock camera relative to active player's craft.
+  // Primary view: update camera based on our craft's movement without affecting current rotation.
   const ourCraft = craftRegistry.get(clientId);
   if (ourCraft) {
-    // Fixed offset in world space relative to the player's craft, e.g. (0, 2, -5)
-    const cameraOffset = new THREE.Vector3(0, 2, -5);
-    camera.position.copy(ourCraft.mesh.position).add(cameraOffset);
-    camera.lookAt(ourCraft.mesh.position);
-    controls.target.copy(ourCraft.mesh.position);
+    // On the first frame, initialize prevCraftPosition
+    if (prevCraftPosition.lengthSq() === 0) {
+      prevCraftPosition.copy(ourCraft.mesh.position);
+    }
+    // Compute movement delta
+    const delta = new THREE.Vector3().subVectors(ourCraft.mesh.position, prevCraftPosition);
+    // Add the delta to the camera position and the OrbitControls target
+    camera.position.add(delta);
+    controls.target.add(delta);
+    // Update prevCraftPosition for next frame
+    prevCraftPosition.copy(ourCraft.mesh.position);
   }
   
   controls.update(); // Update controls for smooth damping effect
