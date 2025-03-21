@@ -82,7 +82,7 @@ renderer.domElement.addEventListener('pointerdown', (event) => {
 const planetGeometry = new THREE.SphereGeometry(20, 64, 64);  // increased radius and segments
 const planetMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22, shininess: 10 });  // a natural green with some specular shine
 const microPlanet = new THREE.Mesh(planetGeometry, planetMaterial);
-microPlanet.position.y = 30;
+// microPlanet.position.y = 30;  // Planet remains centered at (0, 0, 0)
 scene.add(microPlanet);
 
 // Position the camera and micro-planet
@@ -139,6 +139,7 @@ interface Craft {
   orbitSpeed: number;
   angle: number;
   color: number;
+  orbitLine?: THREE.Line;
 }
 
 const craftRegistry = new Map<string, Craft>();
@@ -210,6 +211,25 @@ function createLabelSprite(text: string): THREE.Sprite {
   return sprite;
 }
 
+function createOrbitLine(orbitRadius: number): THREE.Line {
+  const segments = 64;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array((segments + 1) * 3);
+  for (let i = 0; i <= segments; i++) {
+    const angle = (i / segments) * Math.PI * 2;
+    positions[i * 3] = orbitRadius * Math.cos(angle);
+    positions[i * 3 + 1] = 0; // orbit in the xz-plane
+    positions[i * 3 + 2] = orbitRadius * Math.sin(angle);
+  }
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    opacity: 0.5,
+    transparent: true
+  });
+  return new THREE.LineLoop(geometry, material);
+}
+
 // Create a new craft with the given ID and parameters
 function createCraft(id: string, name: string, color: number, orbitRadius: number, orbitSpeed: number): Craft {
   // Make the craft smaller
@@ -223,13 +243,18 @@ function createCraft(id: string, name: string, color: number, orbitRadius: numbe
   label.position.set(0, 0.8, 0);
   craftMesh.add(label);
   
+  const orbitLine = createOrbitLine(orbitRadius);
+  // The orbit line is centered at (0,0,0)
+  scene.add(orbitLine);
+  
   return {
     id,
     mesh: craftMesh,
     orbitRadius,
     orbitSpeed,
     angle: Math.random() * Math.PI * 2, // Random starting angle
-    color
+    color,
+    orbitLine
   };
 }
 
@@ -292,7 +317,7 @@ function animate() {
     craft.mesh.position.x = craft.orbitRadius * Math.cos(craft.angle);
     craft.mesh.position.z = craft.orbitRadius * Math.sin(craft.angle);
     // Ensure the orbit occurs in the same horizontal plane as the planet.
-    craft.mesh.position.y = 30;
+    craft.mesh.position.y = 0;
     
     // Compute the tangent vector of the orbit for proper orientation.
     // Tangent is perpendicular to the radial vector.
@@ -420,6 +445,9 @@ ws.onmessage = (event) => {
       if (craftRegistry.has(craftId)) {
         const craft = craftRegistry.get(craftId)!;
         scene.remove(craft.mesh);
+        if (craft.orbitLine) {
+          scene.remove(craft.orbitLine);
+        }
         craftRegistry.delete(craftId);
         updatePlayerCount();
         console.log('Removed craft:', craftId);
