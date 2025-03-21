@@ -2,7 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 
 // --- WebSocket Server Setup ---
 const craftRegistrations: any[] = [];
-const PORT = 8081;
+const PORT = 8082;
 const wss = new WebSocketServer({ port: PORT });
 
 // Store all connected clients
