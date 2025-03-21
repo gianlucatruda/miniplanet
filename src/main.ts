@@ -13,7 +13,7 @@ function generateRandomName(): string {
 
 // --- Three.js Setup ---
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.layers.disable(1); // already exists for red X
 camera.layers.disable(2); // Hides our active player's craft from main view
 camera.updateProjectionMatrix();
@@ -29,7 +29,7 @@ controls.enableZoom = false;
 
 // --- Mini-map camera: overhead view ---
 const miniMapCamera = new THREE.PerspectiveCamera(
-  90,
+  60,
   window.innerWidth / (window.innerHeight / 4),
   0.1,
   2000
@@ -258,9 +258,17 @@ const myCraft = {
   orbitSpeed: getRandomOrbitSpeed()
 };
 
+// Create a dedicated container for Tweakpane with a high z-index.
+const tweakpaneContainer = document.createElement('div');
+tweakpaneContainer.style.position = 'absolute';
+tweakpaneContainer.style.top = '0';
+tweakpaneContainer.style.right = '0';
+tweakpaneContainer.style.zIndex = '10000';  // ensure this is above the WebGL canvas
+document.body.appendChild(tweakpaneContainer);
+
 const pane = new Pane({
   title: 'Player Info',
-  container: document.body,
+  container: tweakpaneContainer,
 });
 const craftParams = {
   name: myCraft.name,
