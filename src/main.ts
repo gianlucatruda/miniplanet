@@ -356,18 +356,9 @@ function animate() {
   if (ourCraft) {
     craftParams.angle = ourCraft.angle;
     
-    // Primary view: update camera based on our craft's movement without affecting current rotation.
-    // On the first frame, initialize prevCraftPosition
-    if (prevCraftPosition.lengthSq() === 0) {
-      prevCraftPosition.copy(ourCraft.mesh.position);
-    }
-    // Compute movement delta
-    const delta = new THREE.Vector3().subVectors(ourCraft.mesh.position, prevCraftPosition);
-    // Add the delta to the camera position and the OrbitControls target
-    camera.position.add(delta);
-    controls.target.add(delta);
-    // Update prevCraftPosition for next frame
-    prevCraftPosition.copy(ourCraft.mesh.position);
+    // Primary view: directly set camera position to our craft's position
+    camera.position.copy(ourCraft.mesh.position);
+    controls.target.copy(ourCraft.mesh.position);
   }
   
   controls.update(); // Update controls for smooth damping effect
