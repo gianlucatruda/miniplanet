@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { Pane } from 'tweakpane';
 
 function generateRandomName(): string {
@@ -21,11 +22,14 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// --- Add OrbitControls ---
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.enablePan = false;
-controls.enableZoom = false;
+// --- Add PointerLockControls for first-person view ---
+const controls = new PointerLockControls(camera, document.body);
+scene.add(controls.getObject());
+
+// Initialize pointer lock on click
+renderer.domElement.addEventListener('click', () => {
+  controls.lock();
+});
 
 // --- Mini-map camera: overhead view ---
 const miniMapCamera = new THREE.PerspectiveCamera(
@@ -48,8 +52,7 @@ const miniMapControls = new OrbitControls(miniMapCamera, renderer.domElement);
 miniMapControls.target.set(0, 0, 0);
 miniMapControls.update();
 
-// Initially, enable primary controls and disable mini-map controls
-controls.enabled = true;
+// Initially, disable mini-map controls
 miniMapControls.enabled = false;
 
 // Add a pointermove event listener on the renderer's canvas 
@@ -59,11 +62,10 @@ renderer.domElement.addEventListener('pointermove', (event) => {
   if (event.clientY > window.innerHeight * 0.75) {
     // Pointer is over the minimap
     miniMapControls.enabled = true;
-    controls.enabled = false;
+    controls.unlock(); // Unlock pointer controls when over minimap
   } else {
     // Pointer is over the primary view
     miniMapControls.enabled = false;
-    controls.enabled = true;
   }
 });
 
@@ -71,10 +73,10 @@ renderer.domElement.addEventListener('pointermove', (event) => {
 renderer.domElement.addEventListener('pointerdown', (event) => {
   if (event.clientY > window.innerHeight * 0.75) {
     miniMapControls.enabled = true;
-    controls.enabled = false;
+    controls.unlock(); // Unlock pointer controls when clicking on minimap
   } else {
     miniMapControls.enabled = false;
-    controls.enabled = true;
+    controls.lock(); // Lock pointer controls when clicking on main view
   }
 });
 
@@ -358,10 +360,9 @@ function animate() {
     
     // Primary view: update controls object position to our craft's position
     controls.getObject().position.copy(ourCraft.mesh.position);
-    controls.target.copy(ourCraft.mesh.position);
   }
   
-  controls.update(); // Update controls for smooth damping effect
+  miniMapControls.update(); // Only update minimap controls
   
   // --- Render main view ---
   // Reset viewport and render full-screen main view
