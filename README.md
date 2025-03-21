@@ -5,15 +5,13 @@ This project is a simple WebSocket server and Three.js client demonstration. The
 ## Overview
 
 - **WebSocket Server:**  
-  A simple server (located at `server/index.ts`) that listens on port 8080 and echoes messages back to the client.
-- Improved server logs now leverage multiple log levels and parse new Keplerian orbital parameters.
+  A robust WebSocket server that maintains real-time synchronization of spacecraft data—including orbital and fuel parameters—across all connected clients.
 
-- **Three.js Client:**  
-  The client (located in `src/main.ts`) renders a 3D scene with a large green sphere (the micro-planet) and a smaller red sphere orbiting it.  
-  OrbitControls have been added to allow interactive camera movement.
+- **Three.js Client & Gameplay:**  
+  Experience a dynamic simulation where you pilot a spacecraft in a miniature solar system. Use precise orbital burns via WASD (RCS) and spacebar (main thrust) to adjust your trajectory while tracking your fuel consumption in real time. Interact with other players as your craft orbits a vividly rendered micro-planet under dynamic lighting, enhanced by both OrbitControls and custom drag-based rotation.
 
-- **Vite & TypeScript:**  
-  Vite is used for development and build processes of the client-side code. TypeScript is used throughout the project for improved code safety and clarity.
+- **Development Environment:**  
+  Built with Vite and TypeScript, this project emphasizes rapid development, robust type checking, and a modular architecture.
 
 ## Installation and Running
 
@@ -48,35 +46,29 @@ This project is a simple WebSocket server and Three.js client demonstration. The
 
 ## Roadmap
 
-- [x] **Initial Setup:**
+- [x] **Initial Setup:**  
+  - [x] Establish a WebSocket server for real-time communication.
+  - [x] Build a basic Three.js scene featuring a micro-planet and a simple orbiting craft.
+  - [x] Configure development environment with Vite and TypeScript.
 
-  - [x] Setup WebSocket server using `ws`
-  - [x] Integrate basic Three.js scene with micro-planet and orbiting object
-  - [x] Configure TypeScript and Vite for client development
-  - [x] Add OrbitControls and PointerLockControls adjustments for refined camera behavior
+- [x] **Core Mechanics & Client Features:**  
+  - [x] Integrate OrbitControls and custom drag-based rotation for intuitive camera handling.
+  - [x] Implement craft registration and communication between multiple clients.
+  - [x] Enhance server logging with multiple log levels and detailed Keplerian parameter parsing.
 
-- [x] **WebSocket Enhancements:**
+- [ ] **Gameplay Enhancements & Orbital Mechanics:**  
+  - [ ] Implement full orbital burn mechanics using WASD (RCS) and Spacebar (main thrust), complete with fuel tracking.
+  - [ ] Synchronize orbital updates and fuel consumption between clients via periodic server broadcasts.
+  - [ ] Optimize orbital parameter recalculation and dynamic orbit redrawing.
 
-  - [x] Broadcast messages from clients to all clients
-  - [x] **Multiple Crafts:**
-    - [x] Each client generates a unique craft with randomly-generated color and Keplerian orbital parameters (including eccentricity and omega)
-    - [x] Animate all client crafts on each client
-  - [x] Improve server logging with different logging levels and enhanced parsing of orbital parameters
-  - [ ] Add error handling and reconnection logic
+- [ ] **Scene & UI Improvements:**  
+  - [ ] Refine visual effects with dynamic lighting and particle effects.
+  - [ ] Enhance in-game UI elements for tracking fuel, velocity, and other key parameters.
 
-- [x] **Scene Enhancements:**
-
-  - [x] Implement dynamic lighting with a moving sun and ambient light
-  - [ ] Implement user-controlled camera animations (refinement pending)
-
-- [ ] **Deployment:**
-
-  - [ ] Setup continuous integration and deployment workflow.
-  - [ ] Package as a container for cloud hosting
-
-- [ ] **Testing & Documentation:**
-  - [ ] Add unit and integration tests
-  - [ ] Expand documentation and user guides
+- [ ] **Deployment & Testing:**  
+  - [ ] Setup continuous integration and deployment workflows.
+  - [ ] Package the application for cloud hosting.
+  - [ ] Expand unit and integration tests, and improve documentation.
 
 ## Goals and Choices
 
