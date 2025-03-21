@@ -9,7 +9,7 @@ const wss = new WebSocketServer({ port: PORT });
 const clients = new Set<WebSocket>();
 
 wss.on('connection', (ws) => {
-  console.log('New client connected');
+  console.info('New client connected');
   clients.add(ws);
   ws.send(JSON.stringify({ type: 'welcome', message: 'Welcome client!' }));
 
@@ -36,13 +36,13 @@ wss.on('connection', (ws) => {
     if (parsed.type === 'craftRegistration' && parsed.craftData) {
       // Store client id in the WebSocket instance for later removal
       (ws as any).clientId = parsed.craftData.id;
-      console.log(`[Client ${parsed.craftData.id}] Registration: Name=${parsed.craftData.name}, OrbitRadius=${parsed.craftData.orbitRadius}, OrbitSpeed=${parsed.craftData.orbitSpeed}`);
+      console.info(`[Client ${parsed.craftData.id}] Registration: Name=${parsed.craftData.name}, OrbitRadius=${parsed.craftData.orbitRadius}, OrbitSpeed=${parsed.craftData.orbitSpeed}, Eccentricity=${parsed.craftData.e}, Omega=${parsed.craftData.omega}`);
 
       // Check for duplicate registrations before adding.
       if (!craftRegistrations.find((reg) => reg.id === parsed.craftData.id)) {
         craftRegistrations.push(parsed.craftData);
       } else {
-        console.log(`[Client ${parsed.craftData.id}] Duplicate registration received.`);
+        console.debug(`[Client ${parsed.craftData.id}] Duplicate registration received.`);
       }
     }
     // Broadcast the message to all connected clients (including sender)
@@ -55,14 +55,14 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     const clientId = (ws as any).clientId || 'unknown';
-    console.log(`[Client ${clientId}] Disconnected.`);
+    console.info(`[Client ${clientId}] Disconnected.`);
     clients.delete(ws);
 
     if (clientId !== 'unknown') {
       // Remove from craftRegistrations list
       const index = craftRegistrations.findIndex(reg => reg.id === clientId);
       if (index !== -1) {
-        console.log(`[Client ${clientId}] Removing registration.`);
+        console.info(`[Client ${clientId}] Removing registration.`);
         craftRegistrations.splice(index, 1);
       }
       // Broadcast craft removal message to all connected clients
@@ -70,7 +70,7 @@ wss.on('connection', (ws) => {
         type: 'craftRemoval',
         craftId: clientId
       });
-      console.log(`[Broadcast] Craft removal for client ${clientId}.`);
+      console.warn(`[Broadcast] Craft removal for client ${clientId}.`);
       clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(removalMessage);
@@ -89,4 +89,4 @@ function broadcastMessage(message: string, sender: WebSocket) {
   });
 }
 
-console.log(`WebSocket server is running on ws://localhost:${PORT}`);
+console.info(`WebSocket server is running on ws://localhost:${PORT}`);
