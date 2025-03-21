@@ -5,6 +5,15 @@ const craftRegistrations: any[] = [];
 const PORT = 8080;
 const wss = new WebSocketServer({ port: PORT });
 
+wss.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please ensure any previous instances are shut down.`);
+    process.exit(1);
+  } else {
+    console.error('WebSocket server error:', error);
+  }
+});
+
 // Store all connected clients
 const clients = new Set<WebSocket>();
 
@@ -106,4 +115,11 @@ process.on('SIGTERM', () => {
     console.info('WebSocket server closed.');
     process.exit(0);
   });
+});
+
+process.on('exit', () => {
+  if (wss) {
+    wss.close();
+    console.info('WebSocket server closed on process exit.');
+  }
 });
