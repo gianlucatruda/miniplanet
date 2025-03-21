@@ -31,8 +31,11 @@ scene.add(microPlanet);
 camera.position.z = 20;
 
 // --- Add a moving sun as a light source ---
-const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
 scene.add(sunLight);
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+scene.add(ambientLight);
 
 // Add a sun mesh to visually represent the sun
 const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
@@ -75,9 +78,10 @@ function getRandomColor(): number {
   return Math.random() * 0xffffff;
 }
 
-// Generate a random orbit radius between 7 and 15
+// Generate a random orbit radius between 25 and 35
 function getRandomOrbitRadius(): number {
-  return 7 + Math.random() * 8;
+  // Ensure orbits are clearly outside the giant planet (radius = 20)
+  return 25 + Math.random() * 10; // Orbit radii between 25 and 35 units
 }
 
 // Generate a random orbit speed
