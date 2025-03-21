@@ -22,6 +22,8 @@ camera.updateProjectionMatrix();
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+renderer.domElement.tabIndex = 0;  // Make it focusable
+renderer.domElement.focus();
 
 // --- Add PointerLockControls for first-person view ---
 const controls = new PointerLockControls(camera, document.body);
@@ -402,6 +404,7 @@ folder.addMonitor(myCraft, 'mainFuel', { label: 'Main Fuel' });
 const keysPressed: Record<string, boolean> = {};
 
 window.addEventListener('keydown', (event: KeyboardEvent) => {
+  console.log("Key down:", event.code);
   if (event.code === 'Space') {
     event.preventDefault();
   }
@@ -409,11 +412,12 @@ window.addEventListener('keydown', (event: KeyboardEvent) => {
 });
 
 window.addEventListener('keyup', (event: KeyboardEvent) => {
+  console.log("Key up:", event.code);
   keysPressed[event.code] = false;
 });
 
 function applyBurns(craft: Craft, deltaTime: number) {
-  console.debug('applyBurns invoked:', {
+  console.log('applyBurns invoked:', {
     keys: { ...keysPressed },
     thrusterFuel: craft.thrusterFuel,
     mainFuel: craft.mainFuel
@@ -479,7 +483,7 @@ function animate() {
 
   // Get our own craft from the registry and apply burns
   const ourCraft = craftRegistry.get(clientId);
-  console.debug('ourCraft in animate:', ourCraft);
+  console.log('ourCraft in animate:', ourCraft);
   if (ourCraft) {
     applyBurns(ourCraft, delta);
     craftParams.a = ourCraft.orbitRadius; // Update the Tweakpane monitor for orbit radius.
