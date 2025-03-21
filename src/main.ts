@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+const clock = new THREE.Clock();
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { Pane } from 'tweakpane';
@@ -196,6 +197,8 @@ interface Craft {
   orbitLine?: THREE.Line;
   e: number;           // eccentricity
   omega: number;       // argument of periapsis
+  thrusterFuel?: number; // fuel for directional burns
+  mainFuel?: number;     // fuel for primary engine
 }
 
 const craftRegistry = new Map<string, Craft>();
@@ -335,7 +338,9 @@ const myCraft = {
   orbitRadius: getRandomOrbitRadius(),  // This is our semi-major axis, "a"
   orbitSpeed: getRandomOrbitSpeed(),      // Δ true anomaly per frame (simplified)
   e: Math.random() * 0.1,                 // Eccentricity: small (0 to 0.1)
-  omega: Math.random() * Math.PI * 2       // Argument of periapsis (ω)
+  omega: Math.random() * Math.PI * 2,       // Argument of periapsis (ω)
+  thrusterFuel: 100,  // Fuel for directional burns (WASD)
+  mainFuel: 100       // Fuel for the primary engine burn (Space)
 };
 
 // Create a dedicated container for Tweakpane with a high z-index.
@@ -378,6 +383,61 @@ folder.addMonitor(craftParams, 'orbitSpeed', { min: 0.001, max: 0.01 });
 folder.addMonitor(craftParams, 'angle', { min: 0, max: Math.PI * 2 });
 folder.addMonitor(craftParams, 'e', { min: 0, max: 0.1 });
 folder.addMonitor(craftParams, 'omega', { min: 0, max: Math.PI * 2 });
+folder.addMonitor(myCraft, 'thrusterFuel', { label: 'Thruster Fuel' });
+folder.addMonitor(myCraft, 'mainFuel', { label: 'Main Fuel' });
+
+// Track key states for burn controls
+const keysPressed: Record<string, boolean> = {};
+
+window.addEventListener('keydown', (event: KeyboardEvent) => {
+  keysPressed[event.code] = true;
+});
+
+window.addEventListener('keyup', (event: KeyboardEvent) => {
+  keysPressed[event.code] = false;
+});
+
+function applyBurns(craft: Craft, deltaTime: number) {
+  // Scale factors for burn strength (tweak as necessary)
+  const burnIncrement = 0.0005 * deltaTime;      // For tangential (W/S) burns
+  const rotationIncrement = 0.0005 * deltaTime;    // For lateral (A/D) burns
+  const mainBurnIncrement = 0.01;                  // Direct addition for semi‑major axis
+
+  // WASD thruster burns (only if sufficient thruster fuel remains)
+  if (keysPressed['KeyW'] && craft.thrusterFuel > 0) {
+    // A prograde burn to increase orbital speed (simplistically increasing orbitSpeed)
+    craft.orbitSpeed += burnIncrement;
+    craft.thrusterFuel = Math.max(0, craft.thrusterFuel - burnIncrement * 1000);
+  }
+  if (keysPressed['KeyS'] && craft.thrusterFuel > 0) {
+    // A retrograde burn to decrease orbital speed (caution: don't go negative)
+    craft.orbitSpeed = Math.max(0, craft.orbitSpeed - burnIncrement);
+    craft.thrusterFuel = Math.max(0, craft.thrusterFuel - burnIncrement * 1000);
+  }
+  if (keysPressed['KeyA'] && craft.thrusterFuel > 0) {
+    // Adjust orbit orientation counter-clockwise (decrease omega)
+    craft.omega -= rotationIncrement;
+    craft.thrusterFuel = Math.max(0, craft.thrusterFuel - rotationIncrement * 1000);
+  }
+  if (keysPressed['KeyD'] && craft.thrusterFuel > 0) {
+    // Adjust orbit orientation clockwise (increase omega)
+    craft.omega += rotationIncrement;
+    craft.thrusterFuel = Math.max(0, craft.thrusterFuel - rotationIncrement * 1000);
+  }
+  
+  // Spacebar primary engine burn: Increase orbital energy (and hence 'a')
+  if (keysPressed['Space'] && craft.mainFuel > 0) {
+    craft.orbitRadius += mainBurnIncrement;
+    craft.mainFuel = Math.max(0, craft.mainFuel - 0.1);
+  }
+
+  // Redraw orbit: remove the old orbit line (if any) and generate a new one.
+  if (craft.orbitLine) {
+    scene.remove(craft.orbitLine);
+  }
+  craft.orbitLine = createOrbitLine(craft.orbitRadius, craft.e, craft.omega);
+  scene.add(craft.orbitLine);
+}
 
 // Animation function
 function animate() {
@@ -392,6 +452,16 @@ function animate() {
     sunDistance * Math.sin(sunAngle)
   );
   sunLight.position.copy(sunMesh.position);
+  
+  // Compute time elapsed since last frame
+  const delta = clock.getDelta();
+
+  // Get our own craft from the registry and apply burns
+  const ourCraft = craftRegistry.get(clientId);
+  if (ourCraft) {
+    applyBurns(ourCraft, delta);
+    craftParams.a = ourCraft.orbitRadius; // Update the Tweakpane monitor for orbit radius.
+  }
   
   // Update all crafts in the registry
   craftRegistry.forEach(craft => {
