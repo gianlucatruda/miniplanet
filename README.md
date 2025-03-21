@@ -26,11 +26,12 @@ This project is a simple WebSocket server and Three.js client demonstration. The
 2. **Run the project in development mode:**
 
    This concurrently starts the WebSocket server and Vite dev server.
+
    ```bash
    npm run start
    ```
 
-   - The Vite dev server will serve the client at [http://localhost:5173](http://localhost:5173).  
+   - The Vite dev server will serve the client at [http://localhost:5173](http://localhost:5173).
    - The WebSocket server will run on port 8080.
 
 3. **Build for production:**
@@ -47,35 +48,40 @@ This project is a simple WebSocket server and Three.js client demonstration. The
 
 ## Roadmap
 
-- [x] **Initial Setup:**  
+- [x] **Initial Setup:**
+
   - [x] Setup WebSocket server using `ws`
   - [x] Integrate basic Three.js scene with micro-planet and orbiting object
   - [x] Configure TypeScript and Vite for client development
   - [x] Add OrbitControls and PointerLockControls adjustments for refined camera behavior
 
-- [x] **WebSocket Enhancements:**  
+- [x] **WebSocket Enhancements:**
+
   - [x] Broadcast messages from clients to all clients
-  - [x] **Multiple Crafts:**  
+  - [x] **Multiple Crafts:**
     - [x] Each client generates a unique craft with randomly-generated color and Keplerian orbital parameters (including eccentricity and omega)
     - [x] Animate all client crafts on each client
   - [x] Improve server logging with different logging levels and enhanced parsing of orbital parameters
   - [ ] Add error handling and reconnection logic
 
-- [x] **Scene Enhancements:**  
+- [x] **Scene Enhancements:**
+
   - [x] Implement dynamic lighting with a moving sun and ambient light
   - [ ] Implement user-controlled camera animations (refinement pending)
 
-- [ ] **Deployment:**  
+- [ ] **Deployment:**
+
   - [ ] Setup continuous integration and deployment workflow.
   - [ ] Package as a container for cloud hosting
 
-- [ ] **Testing & Documentation:**  
+- [ ] **Testing & Documentation:**
   - [ ] Add unit and integration tests
   - [ ] Expand documentation and user guides
 
 ## Goals and Choices
 
-- **Choice of Technologies:**  
+- **Choice of Technologies:**
+
   - **ws:** for a lightweight WebSocket server.
   - **Three.js:** for powerful and accessible WebGL-based 3D rendering.
   - **Vite:** for a fast, modern development and build pipeline.

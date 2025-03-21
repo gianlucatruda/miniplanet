@@ -11,8 +11,5 @@
     "outDir": "dist",
     "baseUrl": "."
   },
-  "include": [
-    "server/**/*",
-    "src/**/*"
-  ]
+  "include": ["server/**/*", "src/**/*"]
 }
