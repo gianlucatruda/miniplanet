@@ -114,20 +114,6 @@ playerCountDiv.style.borderRadius = "8px";
 playerCountDiv.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.4)";
 document.body.appendChild(playerCountDiv);
 
-// --- Display active player name at top right ---
-const playerNameDiv = document.createElement('div');
-playerNameDiv.id = "playerName";
-playerNameDiv.style.position = "fixed";
-playerNameDiv.style.top = "10px";
-playerNameDiv.style.right = "10px";
-playerNameDiv.style.padding = "5px 12px";
-playerNameDiv.style.background = "rgba(0, 0, 0, 0.6)";
-playerNameDiv.style.color = "#FFD700";
-playerNameDiv.style.fontFamily = "Arial, sans-serif";
-playerNameDiv.style.fontSize = "24px";
-playerNameDiv.style.borderRadius = "8px";
-playerNameDiv.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.4)";
-document.body.appendChild(playerNameDiv);
 
 const miniMapOverlay = document.createElement('div');
 miniMapOverlay.id = 'miniMapOverlay';
@@ -381,7 +367,6 @@ ws.onopen = () => {
   );
   craftRegistry.set(myCraft.id, ourCraft);
   updatePlayerCount();
-  playerNameDiv.textContent = `You: ${myCraft.name}`;
   
   // Hide our craft in the primary view:
   ourCraft.mesh.layers.set(2);
