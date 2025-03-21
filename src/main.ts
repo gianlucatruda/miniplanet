@@ -45,6 +45,36 @@ const miniMapControls = new OrbitControls(miniMapCamera, renderer.domElement);
 miniMapControls.target.set(0, 0, 0);
 miniMapControls.update();
 
+// Initially, enable primary controls and disable mini-map controls
+controls.enabled = true;
+miniMapControls.enabled = false;
+
+// Add a pointermove event listener on the renderer's canvas 
+renderer.domElement.addEventListener('pointermove', (event) => {
+  // Determine the vertical position of the pointer.
+  // mini-map view occupies the bottom quarter of the screen.
+  if (event.clientY > window.innerHeight * 0.75) {
+    // Pointer is over the minimap
+    miniMapControls.enabled = true;
+    controls.enabled = false;
+  } else {
+    // Pointer is over the primary view
+    miniMapControls.enabled = false;
+    controls.enabled = true;
+  }
+});
+
+// Also update on pointerdown so that dragging begins with the right control:
+renderer.domElement.addEventListener('pointerdown', (event) => {
+  if (event.clientY > window.innerHeight * 0.75) {
+    miniMapControls.enabled = true;
+    controls.enabled = false;
+  } else {
+    miniMapControls.enabled = false;
+    controls.enabled = true;
+  }
+});
+
 // --- Create a giant planet with a more realistic, lit material ---
 const planetGeometry = new THREE.SphereGeometry(20, 64, 64);  // increased radius and segments
 const planetMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22, shininess: 10 });  // a natural green with some specular shine
