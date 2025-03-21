@@ -21,22 +21,37 @@ document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- Create a micro-planet (a simple sphere) ---
-const planetGeometry = new THREE.SphereGeometry(5, 32, 32);
-const planetMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+// --- Create a giant planet with a more realistic, lit material ---
+const planetGeometry = new THREE.SphereGeometry(20, 64, 64);  // increased radius and segments
+const planetMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22, shininess: 10 });  // a natural green with some specular shine
 const microPlanet = new THREE.Mesh(planetGeometry, planetMaterial);
 scene.add(microPlanet);
 
 // Position the camera and micro-planet
 camera.position.z = 20;
 
+// --- Add a moving sun as a light source ---
+const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+scene.add(sunLight);
+
+// Add a sun mesh to visually represent the sun
+const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
+const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+scene.add(sunMesh);
+
 const playerCountDiv = document.createElement('div');
 playerCountDiv.id = "playerCount";
 playerCountDiv.style.position = "fixed";
 playerCountDiv.style.top = "10px";
 playerCountDiv.style.left = "10px";
-playerCountDiv.style.color = "white";
-playerCountDiv.style.fontSize = "20px";
+playerCountDiv.style.padding = "5px 12px";
+playerCountDiv.style.background = "rgba(0, 0, 0, 0.6)";
+playerCountDiv.style.color = "#FFD700"; // gold-ish text
+playerCountDiv.style.fontFamily = "Arial, sans-serif";
+playerCountDiv.style.fontSize = "24px";
+playerCountDiv.style.borderRadius = "8px";
+playerCountDiv.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.4)";
 document.body.appendChild(playerCountDiv);
 
 function updatePlayerCount() {
@@ -96,14 +111,15 @@ function createLabelSprite(text: string): THREE.Sprite {
 
 // Create a new craft with the given ID and parameters
 function createCraft(id: string, name: string, color: number, orbitRadius: number, orbitSpeed: number): Craft {
-  const craftGeometry = new THREE.SphereGeometry(1, 32, 32);
+  // Make the craft smaller
+  const craftGeometry = new THREE.SphereGeometry(0.5, 32, 32);
   const craftMaterial = new THREE.MeshBasicMaterial({ color });
   const craftMesh = new THREE.Mesh(craftGeometry, craftMaterial);
   scene.add(craftMesh);
 
-  // Create and add a label above the craft
+  // Create and add a label above the craft; adjust the offset accordingly
   const label = createLabelSprite(name);
-  label.position.set(0, 1.5, 0); // adjust offset so it's above the craft
+  label.position.set(0, 0.8, 0);
   craftMesh.add(label);
   
   return {
@@ -131,6 +147,16 @@ const myCraft = {
 // Animation function
 function animate() {
   requestAnimationFrame(animate);
+  
+  // Update sun position in a circular orbit above the scene
+  const sunAngle = Date.now() * 0.0001; // adjust speed as desired
+  const sunDistance = 50;               // distance from scene center
+  sunMesh.position.set(
+    sunDistance * Math.cos(sunAngle),
+    30,  // height of the sun
+    sunDistance * Math.sin(sunAngle)
+  );
+  sunLight.position.copy(sunMesh.position);
   
   // Update all crafts in the registry
   craftRegistry.forEach(craft => {
