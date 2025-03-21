@@ -22,7 +22,7 @@ wss.on('connection', (ws) => {
     console.log('Received message:', data);
     
     const message = data.toString();
-    let parsed;
+    let parsed: any;
     try {
       parsed = JSON.parse(message);
     } catch (err) {
