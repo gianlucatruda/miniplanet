@@ -140,25 +140,6 @@ miniMapOverlay.style.border = '3px solid #FFD700'; // gold border for visibility
 miniMapOverlay.style.pointerEvents = 'none'; // ensure it doesn't block clicks
 document.body.appendChild(miniMapOverlay);
 
-
-const pane = new Pane({
-  title: 'Player Info',
-  container: document.body,
-});
-const craftParams = {
-  name: myCraft.name,
-  orbitRadius: myCraft.orbitRadius,
-  orbitSpeed: myCraft.orbitSpeed,
-  angle: 0,
-};
-const folder = pane.addFolder({
-  title: 'Craft Parameters',
-});
-folder.addMonitor(craftParams, 'name');
-folder.addMonitor(craftParams, 'orbitRadius', { min: 30, max: 50 });
-folder.addMonitor(craftParams, 'orbitSpeed', { min: 0.001, max: 0.01 });
-folder.addMonitor(craftParams, 'angle', { min: 0, max: Math.PI * 2 });
-
 function updatePlayerCount() {
   playerCountDiv.textContent = `Players: ${craftRegistry.size}`;
 }
@@ -276,6 +257,24 @@ const myCraft = {
   orbitRadius: getRandomOrbitRadius(),
   orbitSpeed: getRandomOrbitSpeed()
 };
+
+const pane = new Pane({
+  title: 'Player Info',
+  container: document.body,
+});
+const craftParams = {
+  name: myCraft.name,
+  orbitRadius: myCraft.orbitRadius,
+  orbitSpeed: myCraft.orbitSpeed,
+  angle: 0,
+};
+const folder = pane.addFolder({
+  title: 'Craft Parameters',
+});
+folder.addMonitor(craftParams, 'name');
+folder.addMonitor(craftParams, 'orbitRadius', { min: 30, max: 50 });
+folder.addMonitor(craftParams, 'orbitSpeed', { min: 0.001, max: 0.01 });
+folder.addMonitor(craftParams, 'angle', { min: 0, max: Math.PI * 2 });
 
 // Animation function
 function animate() {
