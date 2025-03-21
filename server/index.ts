@@ -1,8 +1,8 @@
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 
 // --- WebSocket Server Setup ---
 const PORT = 8080;
-const wss = new WebSocket.Server({ port: PORT });
+const wss = new WebSocketServer({ port: PORT });
 
 wss.on('connection', (ws) => {
   console.log('New client connected');
