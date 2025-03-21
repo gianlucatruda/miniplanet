@@ -19,9 +19,11 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('message', (data) => {
-    console.log('Received message:', data);
-    
     const message = data.toString();
+    // Trim the message for logging if it's too long
+    const trimmedMessage = message.length > 100 ? message.substring(0, 100) + '...' : message;
+    console.log(`[Client ${(ws as any).clientId || 'unknown'}] Received message: ${trimmedMessage}`);
+    
     let parsed: any;
     try {
       parsed = JSON.parse(message);
@@ -34,10 +36,13 @@ wss.on('connection', (ws) => {
     if (parsed.type === 'craftRegistration' && parsed.craftData) {
       // Store client id in the WebSocket instance for later removal
       (ws as any).clientId = parsed.craftData.id;
-      
-      // Optional: check for duplicate registrations before adding.
+      console.log(`[Client ${parsed.craftData.id}] Registration: Name=${parsed.craftData.name}, OrbitRadius=${parsed.craftData.orbitRadius}, OrbitSpeed=${parsed.craftData.orbitSpeed}`);
+
+      // Check for duplicate registrations before adding.
       if (!craftRegistrations.find((reg) => reg.id === parsed.craftData.id)) {
         craftRegistrations.push(parsed.craftData);
+      } else {
+        console.log(`[Client ${parsed.craftData.id}] Duplicate registration received.`);
       }
     }
     // Broadcast the message to all connected clients (including sender)
@@ -49,13 +54,15 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    console.log('Client disconnected');
+    const clientId = (ws as any).clientId || 'unknown';
+    console.log(`[Client ${clientId}] Disconnected.`);
     clients.delete(ws);
-    const clientId = (ws as any).clientId;
-    if (clientId) {
+
+    if (clientId !== 'unknown') {
       // Remove from craftRegistrations list
       const index = craftRegistrations.findIndex(reg => reg.id === clientId);
       if (index !== -1) {
+        console.log(`[Client ${clientId}] Removing registration.`);
         craftRegistrations.splice(index, 1);
       }
       // Broadcast craft removal message to all connected clients
@@ -63,6 +70,7 @@ wss.on('connection', (ws) => {
         type: 'craftRemoval',
         craftId: clientId
       });
+      console.log(`[Broadcast] Craft removal for client ${clientId}.`);
       clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(removalMessage);
