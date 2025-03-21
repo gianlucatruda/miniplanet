@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Pane } from 'tweakpane';
 
 function generateRandomName(): string {
   const adjectives = ['Menacing', 'Happy', 'Swift', 'Wise', 'Mighty'];
@@ -139,6 +140,24 @@ miniMapOverlay.style.border = '3px solid #FFD700'; // gold border for visibility
 miniMapOverlay.style.pointerEvents = 'none'; // ensure it doesn't block clicks
 document.body.appendChild(miniMapOverlay);
 
+const pane = new Pane({
+  title: 'Player Info',
+  container: document.body,
+});
+const craftParams = {
+  name: myCraft.name,
+  orbitRadius: myCraft.orbitRadius,
+  orbitSpeed: myCraft.orbitSpeed,
+  angle: 0,
+};
+const folder = pane.addFolder({
+  title: 'Craft Parameters',
+});
+folder.addMonitor(craftParams, 'name');
+folder.addMonitor(craftParams, 'orbitRadius', { min: 30, max: 50 });
+folder.addMonitor(craftParams, 'orbitSpeed', { min: 0.001, max: 0.01 });
+folder.addMonitor(craftParams, 'angle', { min: 0, max: Math.PI * 2 });
+
 function updatePlayerCount() {
   playerCountDiv.textContent = `Players: ${craftRegistry.size}`;
 }
@@ -165,8 +184,8 @@ function getRandomColor(): number {
 
 // Generate a random orbit radius between 25 and 35
 function getRandomOrbitRadius(): number {
-  // Ensure orbits are clearly outside the giant planet (radius = 20)
-  return 25 + Math.random() * 10; // Orbit radii between 25 and 35 units
+  // Ensure orbits are at least 1.5x the planet's radius (20 x 1.5 = 30)
+  return 30 + Math.random() * 10; // Orbit radii between 30 and 40 units
 }
 
 // Generate a random orbit speed
@@ -290,6 +309,11 @@ function animate() {
     const lookAtPoint = new THREE.Vector3().addVectors(craft.mesh.position, tangent);
     craft.mesh.lookAt(lookAtPoint);
   });
+  
+  const ourCraft = craftRegistry.get(clientId);
+  if (ourCraft) {
+    craftParams.angle = ourCraft.angle;
+  }
   
   // Primary view: update camera based on our craft's movement without affecting current rotation.
   const ourCraft = craftRegistry.get(clientId);
