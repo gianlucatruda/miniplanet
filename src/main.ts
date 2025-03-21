@@ -140,6 +140,7 @@ miniMapOverlay.style.border = '3px solid #FFD700'; // gold border for visibility
 miniMapOverlay.style.pointerEvents = 'none'; // ensure it doesn't block clicks
 document.body.appendChild(miniMapOverlay);
 
+
 const pane = new Pane({
   title: 'Player Info',
   container: document.body,
