@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 // --- Three.js Setup ---
 const scene = new THREE.Scene();
@@ -6,6 +7,10 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
+// --- Add OrbitControls ---
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
 // --- Create a micro-planet (a simple sphere) ---
 const planetGeometry = new THREE.SphereGeometry(5, 32, 32);
@@ -29,6 +34,7 @@ function animate() {
   angle += 0.01;
   orbitingObject.position.x = 10 * Math.cos(angle);
   orbitingObject.position.z = 10 * Math.sin(angle);
+  controls.update(); // Update controls for smooth damping effect
   renderer.render(scene, camera);
 }
 animate();
