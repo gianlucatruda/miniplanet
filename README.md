@@ -53,7 +53,10 @@ This project is a simple WebSocket server and Three.js client demonstration. The
   - [x] Add OrbitControls to the Three.js scene
 
 - [ ] **WebSocket Enhancements:**  
-  - [ ] Improve client-server communication protocols
+  - [x] Broadcast messages from clients to all clients
+  - [ ] **Multiple Crafts:**  
+    - [ ] Each client generates a unique craft with randomly-generated color and orbital parameters  
+    - [ ] Animate all client crafts on each client without collisions (different orbit trajectories)
   - [ ] Add error handling and reconnection logic
 
 - [ ] **Scene Enhancements:**  
