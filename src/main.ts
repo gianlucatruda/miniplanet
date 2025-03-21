@@ -13,7 +13,8 @@ function generateRandomName(): string {
 // --- Three.js Setup ---
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.layers.disable(1);
+camera.layers.disable(1); // already exists for red X
+camera.layers.disable(2); // Hides our active player's craft from main view
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -34,6 +35,8 @@ miniMapCamera.lookAt(0, 0, 0);
 // Ensure the mini-map sees both regular objects (layer 0) and the marker (layer 1)
 miniMapCamera.layers.enable(0);
 miniMapCamera.layers.enable(1);
+// Ensure the mini-map sees layer 2 (our active player's craft)
+miniMapCamera.layers.enable(2);
 
 // --- Create a giant planet with a more realistic, lit material ---
 const planetGeometry = new THREE.SphereGeometry(20, 64, 64);  // increased radius and segments
@@ -71,6 +74,17 @@ playerCountDiv.style.borderRadius = "8px";
 playerCountDiv.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.4)";
 document.body.appendChild(playerCountDiv);
 
+const miniMapOverlay = document.createElement('div');
+miniMapOverlay.id = 'miniMapOverlay';
+miniMapOverlay.style.position = 'fixed';
+miniMapOverlay.style.bottom = '0';
+miniMapOverlay.style.left = '0';
+miniMapOverlay.style.width = '100%';
+miniMapOverlay.style.height = '25%';
+miniMapOverlay.style.border = '3px solid #FFD700'; // gold border for visibility
+miniMapOverlay.style.pointerEvents = 'none'; // ensure it doesn't block clicks
+document.body.appendChild(miniMapOverlay);
+
 function updatePlayerCount() {
   playerCountDiv.textContent = `Players: ${craftRegistry.size}`;
 }
@@ -100,7 +114,8 @@ function getRandomOrbitRadius(): number {
 
 // Generate a random orbit speed
 function getRandomOrbitSpeed(): number {
-  return 0.005 + Math.random() * 0.015;
+  // Slower speeds: between 0.001 and 0.006
+  return 0.001 + Math.random() * 0.005;
 }
 
 function createRedXMarker(): THREE.Sprite {
@@ -189,7 +204,7 @@ function animate() {
   requestAnimationFrame(animate);
   
   // Update sun position in a circular orbit above the scene
-  const sunAngle = Date.now() * 0.0001; // adjust speed as desired
+  const sunAngle = Date.now() * 0.00005; // adjust speed as desired
   const sunDistance = 50;               // distance from scene center
   sunMesh.position.set(
     sunDistance * Math.cos(sunAngle),
@@ -255,6 +270,9 @@ ws.onopen = () => {
   );
   craftRegistry.set(myCraft.id, ourCraft);
   updatePlayerCount();
+  
+  // Hide our craft in the primary view:
+  ourCraft.mesh.layers.set(2);
   
   // Add the red X marker so the active player's craft is clearly identified in the mini-map.
   const redXMarker = createRedXMarker();
