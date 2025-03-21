@@ -402,6 +402,9 @@ folder.addMonitor(myCraft, 'mainFuel', { label: 'Main Fuel' });
 const keysPressed: Record<string, boolean> = {};
 
 window.addEventListener('keydown', (event: KeyboardEvent) => {
+  if (event.code === 'Space') {
+    event.preventDefault();
+  }
   keysPressed[event.code] = true;
 });
 
@@ -410,6 +413,12 @@ window.addEventListener('keyup', (event: KeyboardEvent) => {
 });
 
 function applyBurns(craft: Craft, deltaTime: number) {
+  console.debug('applyBurns invoked:', {
+    keys: { ...keysPressed },
+    thrusterFuel: craft.thrusterFuel,
+    mainFuel: craft.mainFuel
+  });
+  
   // Scale factors for burn strength (tweak as necessary)
   const burnIncrement = 0.0005 * deltaTime;      // For tangential (W/S) burns
   const rotationIncrement = 0.0005 * deltaTime;    // For lateral (A/D) burns
@@ -470,6 +479,7 @@ function animate() {
 
   // Get our own craft from the registry and apply burns
   const ourCraft = craftRegistry.get(clientId);
+  console.debug('ourCraft in animate:', ourCraft);
   if (ourCraft) {
     applyBurns(ourCraft, delta);
     craftParams.a = ourCraft.orbitRadius; // Update the Tweakpane monitor for orbit radius.
