@@ -487,7 +487,7 @@ function animate() {
     craft.mesh.lookAt(new THREE.Vector3().addVectors(craft.mesh.position, tangent));
   });
   
-  const ourCraft = craftRegistry.get(clientId);
+  // Update additional craft parameters and primary view position using the already-declared ourCraft
   if (ourCraft) {
     craftParams.angle = ourCraft.angle;
     
