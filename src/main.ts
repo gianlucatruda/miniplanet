@@ -519,7 +519,7 @@ function animate() {
 animate();
 
 // --- WebSocket Connection ---
-const ws = new WebSocket('ws://localhost:8082');
+const ws = new WebSocket('ws://localhost:8080');
 
 ws.onopen = () => {
   console.log('WebSocket connection established');

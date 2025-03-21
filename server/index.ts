@@ -2,7 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 
 // --- WebSocket Server Setup ---
 const craftRegistrations: any[] = [];
-const PORT = 8082;
+const PORT = 8080;
 const wss = new WebSocketServer({ port: PORT });
 
 // Store all connected clients
@@ -90,3 +90,20 @@ function broadcastMessage(message: string, sender: WebSocket) {
 }
 
 console.info(`WebSocket server is running on ws://localhost:${PORT}`);
+
+// Setup graceful shutdown
+process.on('SIGINT', () => {
+  console.info('SIGINT signal received. Closing WebSocket server...');
+  wss.close(() => {
+    console.info('WebSocket server closed.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.info('SIGTERM signal received. Closing WebSocket server...');
+  wss.close(() => {
+    console.info('WebSocket server closed.');
+    process.exit(0);
+  });
+});
