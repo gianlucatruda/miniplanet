@@ -54,6 +54,20 @@ wss.on('connection', (ws) => {
         console.debug(`[Client ${parsed.craftData.id}] Duplicate registration received.`);
       }
     }
+    else if (parsed.type === 'craftUpdate' && parsed.craftData) {
+      // Update the stored craft registration in craftRegistrations (if it exists)
+      const index = craftRegistrations.findIndex(reg => reg.id === parsed.craftData.id);
+      if (index !== -1) {
+        craftRegistrations[index] = parsed.craftData;
+      }
+      // Broadcast the updated parameters to all connected clients.
+      const updateMsg = JSON.stringify(parsed);
+      clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(updateMsg);
+        }
+      });
+    }
     // Broadcast the message to all connected clients (including sender)
     clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
@@ -99,6 +113,19 @@ function broadcastMessage(message: string, sender: WebSocket) {
 }
 
 console.info(`WebSocket server is running on ws://localhost:${PORT}`);
+
+// Periodically broadcast all craft registrations to all connected clients (e.g. every 1 second)
+setInterval(() => {
+  const message = JSON.stringify({
+    type: 'craftUpdateAll',
+    craftData: craftRegistrations
+  });
+  clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}, 1000);
 
 // Setup graceful shutdown
 process.on('SIGINT', () => {

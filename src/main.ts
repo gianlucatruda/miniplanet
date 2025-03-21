@@ -462,6 +462,30 @@ function applyBurns(craft: Craft, deltaTime: number) {
   }
   craft.orbitLine = createOrbitLine(craft.orbitRadius, craft.e, craft.omega);
   scene.add(craft.orbitLine);
+
+  // Notify server of the updated craft parameters (if any burn key is pressed)
+  if (
+    keysPressed['KeyW'] ||
+    keysPressed['KeyS'] ||
+    keysPressed['KeyA'] ||
+    keysPressed['KeyD'] ||
+    keysPressed['Space']
+  ) {
+    const updateMessage = {
+      type: 'craftUpdate',
+      craftData: {
+        id: craft.id,
+        orbitRadius: craft.orbitRadius,
+        orbitSpeed: craft.orbitSpeed,
+        angle: craft.angle,
+        thrusterFuel: craft.thrusterFuel,
+        mainFuel: craft.mainFuel,
+        e: craft.e,
+        omega: craft.omega
+      }
+    };
+    ws.send(JSON.stringify(updateMessage));
+  }
 }
 
 // Animation function
@@ -632,6 +656,28 @@ ws.onmessage = (event) => {
         updatePlayerCount();
         console.log('Removed craft:', craftId);
       }
+    }
+    else if (data.type === 'craftUpdateAll') {
+      const updatedCrafts = data.craftData;
+      updatedCrafts.forEach((cd: any) => {
+        // Only update crafts other than our own, if already registered.
+        if (cd.id !== clientId && craftRegistry.has(cd.id)) {
+          const craft = craftRegistry.get(cd.id)!;
+          craft.orbitRadius = cd.orbitRadius;
+          craft.orbitSpeed = cd.orbitSpeed;
+          craft.angle = cd.angle;
+          craft.thrusterFuel = cd.thrusterFuel;
+          craft.mainFuel = cd.mainFuel;
+          craft.e = cd.e;
+          craft.omega = cd.omega;
+
+          if (craft.orbitLine) {
+            scene.remove(craft.orbitLine);
+          }
+          craft.orbitLine = createOrbitLine(craft.orbitRadius, craft.e, craft.omega);
+          scene.add(craft.orbitLine);
+        }
+      });
     }
   } catch (error) {
     console.error('Error parsing message:', error);
