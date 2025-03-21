@@ -202,6 +202,17 @@ ws.onmessage = (event) => {
         updatePlayerCount();
       }
     }
+    // Handle craft removal
+    else if (data.type === 'craftRemoval') {
+      const craftId = data.craftId;
+      if (craftRegistry.has(craftId)) {
+        const craft = craftRegistry.get(craftId)!;
+        scene.remove(craft.mesh);
+        craftRegistry.delete(craftId);
+        updatePlayerCount();
+        console.log('Removed craft:', craftId);
+      }
+    }
   } catch (error) {
     console.error('Error parsing message:', error);
   }

@@ -32,6 +32,9 @@ wss.on('connection', (ws) => {
 
     // If it's a craft registration message, store it (if not already stored)
     if (parsed.type === 'craftRegistration' && parsed.craftData) {
+      // Store client id in the WebSocket instance for later removal
+      (ws as any).clientId = parsed.craftData.id;
+      
       // Optional: check for duplicate registrations before adding.
       if (!craftRegistrations.find((reg) => reg.id === parsed.craftData.id)) {
         craftRegistrations.push(parsed.craftData);
@@ -48,6 +51,24 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('Client disconnected');
     clients.delete(ws);
+    const clientId = (ws as any).clientId;
+    if (clientId) {
+      // Remove from craftRegistrations list
+      const index = craftRegistrations.findIndex(reg => reg.id === clientId);
+      if (index !== -1) {
+        craftRegistrations.splice(index, 1);
+      }
+      // Broadcast craft removal message to all connected clients
+      const removalMessage = JSON.stringify({
+        type: 'craftRemoval',
+        craftId: clientId
+      });
+      clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(removalMessage);
+        }
+      });
+    }
   });
 });
 
